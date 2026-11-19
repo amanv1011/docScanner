@@ -1,0 +1,7 @@
+Quarter,Department,Budget_USD,Actual_USD,Variance_USD,Headcount,Target_Met,Notes
+Q3-2024,Engineering & Infrastructure,6200000,6850000,650000,94,NO,GPU cloud burst compute overruns
+Q3-2024,Sales & Business Dev,4200000,3950000,-250000,52,YES,Commission savings from delayed pipeline
+Q3-2024,Customer Success & Support,1800000,1920000,120000,24,NO,Hired 4 contractors for enterprise retention
+Q3-2024,General & Administrative,1750000,1690000,-60000,16,YES,Favorable legal retainer reconciliation
+Q3-2024,Product & Design,1600000,1540000,-60000,18,YES,Design systems refactor delivered on schedule
+Q3-2024,Total Consolidated,15550000,15950000,400000,204,NO,Total net expense variance $400K above board plan

@@ -1,0 +1,32 @@
+ACME CLOUD TECHNOLOGIES INC.
+QUARTERLY FINANCIAL REPORT - Q2 2024
+Report Date: July 22, 2024
+Confidential - For Executive Review Only
+
+1. EXECUTIVE OVERVIEW
+Acme Cloud experienced rapid topline expansion during Q2 2024, alongside significant operational expenditure increases as we accelerated engineering hiring and expanded our global datacenter infrastructure to support generative AI workloads.
+
+2. FINANCIAL PERFORMANCE SUMMARY
+- Total Quarterly Revenue: $14,100,000 USD (up 13.7% QoQ from Q1's $12.4M)
+- Annual Recurring Revenue (ARR): $54,800,000 USD
+- GAAP Gross Margin: 71.5% (compressed by 270 bps due to cloud GPU infrastructure costs)
+- Total Operating Expenses: $11,200,000 USD (spiked 25.8% compared to Q1)
+  * Research & Development: $5,600,000 USD
+  * Sales & Marketing: $3,900,000 USD
+  * General & Administrative: $1,700,000 USD
+- Operating Income: -$320,000 USD (Operating Loss)
+- Net Income: -$410,000 USD (Diverged from Q1 profit of $820K)
+- Cash and Cash Equivalents: $29,800,000 USD
+
+3. OPERATIONAL METRICS & KPI HIGHLIGHTS
+- Full-Time Headcount: 178 employees (added 36 net new hires in Q2)
+- Total Active Enterprise Customers: 468 accounts
+- Net Retention Rate (NRR): 112% (down 6 percentage points from Q1)
+- Enterprise Annual Churn Rate: 3.2% (Discrepancy: exceeds Q1 management target ceiling of 1.5%)
+- Customer Acquisition Cost (CAC): $18,176 USD (increased 28% QoQ)
+- Average Contract Value (ACV): $89,500 USD
+
+4. STRATEGIC INITIATIVES & RISK FACTORS
+GPU server cluster procurement drove an unbudgeted $1.4M hardware amortization expense. Additionally, two legacy enterprise accounts terminated contracts early citing delayed regional data residency compliance in the EU.
+Forward Guidance: Full-year ARR guidance revised to $54.0M - $56.0M (downgraded from prior $58M-$60M forecast). Operating profitability is not expected until Q4 2024.
+Audited and approved by: Marcus Vance, Chief Financial Officer.
