@@ -2,11 +2,17 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { documentsRouter } from './routes/documents.js';
 import { analysisRouter } from './routes/analysis.js';
 import { UnsupportedFileTypeError, FileParsingError } from './services/documentParser.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const app = express();
 
@@ -40,6 +46,25 @@ app.get('/api/health', (_req: Request, res: Response) => {
 // Routes
 app.use('/api/documents', documentsRouter);
 app.use('/api/analysis', analysisRouter);
+
+// Serve frontend static build in production (Single Web Service on Render)
+const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+const altFrontendDist = path.resolve(__dirname, '../../../frontend/dist');
+const activeDist = fs.existsSync(frontendDist)
+  ? frontendDist
+  : fs.existsSync(altFrontendDist)
+  ? altFrontendDist
+  : null;
+
+if (activeDist) {
+  app.use(express.static(activeDist));
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(activeDist, 'index.html'));
+  });
+}
 
 // Global Error Handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

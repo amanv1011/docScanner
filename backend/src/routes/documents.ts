@@ -109,9 +109,10 @@ documentsRouter.get('/', (_req: Request, res: Response): void => {
  * Retrieve specific document details and its extracted text.
  */
 documentsRouter.get('/:id', (req: Request, res: Response): void => {
-  const doc = documentRepo.getById(req.params.id);
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const doc = documentRepo.getById(id);
   if (!doc) {
-    res.status(404).json({ error: `Document not found with ID ${req.params.id}` });
+    res.status(404).json({ error: `Document not found with ID ${id}` });
     return;
   }
   res.json(doc);
@@ -122,8 +123,9 @@ documentsRouter.get('/:id', (req: Request, res: Response): void => {
  * Delete a document from SQLite.
  */
 documentsRouter.delete('/:id', (req: Request, res: Response): void => {
-  const success = documentRepo.delete(req.params.id);
-  res.json({ success, id: req.params.id });
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const success = documentRepo.delete(id);
+  res.json({ success, id });
 });
 
 /**
