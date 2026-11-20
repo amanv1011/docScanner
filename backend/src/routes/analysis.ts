@@ -42,10 +42,9 @@ analysisRouter.get('/history', (_req: Request, res: Response): void => {
  * Retrieve specific analysis record.
  */
 analysisRouter.get('/:id', (req: Request, res: Response): void => {
-  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const analysis = getAnalysisById(id);
+  const analysis = getAnalysisById(req.params.id);
   if (!analysis) {
-    res.status(404).json({ error: `Analysis record ${id} not found.` });
+    res.status(404).json({ error: `Analysis record ${req.params.id} not found.` });
     return;
   }
   res.json(analysis);
@@ -56,7 +55,6 @@ analysisRouter.get('/:id', (req: Request, res: Response): void => {
  * Delete specific analysis record.
  */
 analysisRouter.delete('/:id', (req: Request, res: Response): void => {
-  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const success = deleteAnalysis(id);
-  res.json({ success, id });
+  const success = deleteAnalysis(req.params.id);
+  res.json({ success, id: req.params.id });
 });

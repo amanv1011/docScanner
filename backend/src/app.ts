@@ -11,9 +11,6 @@ import { UnsupportedFileTypeError, FileParsingError } from './services/documentP
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 export const app = express();
 
 // Middlewares
@@ -47,22 +44,12 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/documents', documentsRouter);
 app.use('/api/analysis', analysisRouter);
 
-// Serve frontend static build in production (Single Web Service on Render)
-const frontendDist = path.resolve(__dirname, '../../frontend/dist');
-const altFrontendDist = path.resolve(__dirname, '../../../frontend/dist');
-const activeDist = fs.existsSync(frontendDist)
-  ? frontendDist
-  : fs.existsSync(altFrontendDist)
-  ? altFrontendDist
-  : null;
-
-if (activeDist) {
-  app.use(express.static(activeDist));
-  app.get('*', (req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(path.join(activeDist, 'index.html'));
+// Serve the built frontend (production). Resolves to <repo>/frontend/dist from both src/ and dist/.
+const frontendDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get(/^\/(?!api\/).*/, (_req: Request, res: Response) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
 
