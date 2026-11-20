@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import { DocumentRecord, AnalysisResult, KeyFinding, MetricComparison, Discrepancy, MissingInformation, SourceReference } from '../types/index.js';
 
 /**
@@ -36,36 +37,7 @@ function escapeXml(unsafe: string): string {
   });
 }
 
-export interface AnalyzeOptions {
-  documents: DocumentRecord[];
-  prompt: string;
-}
-
-export interface AnalyzeOutput {
-  result: AnalysisResult;
-  modelUsed: string;
-  isMock: boolean;
-}
-
-/**
- * Executes multi-document analysis using OpenAI API or intelligent dynamic mock fallback.
- */
-export async function analyzeDocuments(options: AnalyzeOptions): Promise<AnalyzeOutput> {
-  const { documents, prompt } = options;
-
-  if (documents.length === 0) {
-    throw new Error('At least one document is required for analysis.');
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  const preferredModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
-  if (apiKey && apiKey !== 'mock' && apiKey.startsWith('sk-')) {
-    try {
-      const openai = new OpenAI({ apiKey });
-      const documentContext = buildIsolatedDocumentContext(documents);
-
-      const systemPrompt = `You are the Multi-Document Intelligence Workbench AI Engine.
+const SYSTEM_ANALYSIS_PROMPT = `You are the Multi-Document Intelligence Workbench AI Engine.
 Your task is to perform rigorous comparative, factual, and analytical evaluation across the provided documents in response to the user's prompt.
 
 CRITICAL INSTRUCTIONS:
@@ -130,12 +102,82 @@ You MUST respond strictly with valid JSON conforming to this schema:
   ]
 }`;
 
-      const userMessage = `User Analysis Prompt: "${prompt}"\n\nAttached Documents:\n${documentContext}`;
+export interface AnalyzeOptions {
+  documents: DocumentRecord[];
+  prompt: string;
+}
+
+export interface AnalyzeOutput {
+  result: AnalysisResult;
+  modelUsed: string;
+  isMock: boolean;
+}
+
+/**
+ * Executes multi-document analysis using Gemini API, OpenAI API, or intelligent dynamic mock fallback.
+ */
+export async function analyzeDocuments(options: AnalyzeOptions): Promise<AnalyzeOutput> {
+  const { documents, prompt } = options;
+
+  if (documents.length === 0) {
+    throw new Error('At least one document is required for analysis.');
+  }
+
+  const documentContext = buildIsolatedDocumentContext(documents);
+  const userMessage = `User Analysis Prompt: "${prompt}"\n\nAttached Documents:\n${documentContext}`;
+
+  // 1. Check Gemini API Key
+  const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
+  if (geminiApiKey && geminiApiKey !== 'mock') {
+    try {
+      const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+
+      const response = await ai.models.generateContent({
+        model: geminiModel,
+        contents: `${SYSTEM_ANALYSIS_PROMPT}\n\n${userMessage}`,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        },
+      });
+
+      const content = response.text;
+      if (!content) {
+        throw new Error('Gemini API returned an empty response.');
+      }
+
+      const parsed: AnalysisResult = JSON.parse(content);
+      parsed.sourceReferences = documents.map((doc) => ({
+        documentId: doc.id,
+        documentName: doc.originalName,
+        totalChars: doc.charCount,
+        tokenEstimate: doc.tokenEstimate,
+        excerpt: doc.extractedText.slice(0, 220).replace(/\n/g, ' ') + (doc.extractedText.length > 220 ? '...' : ''),
+      }));
+
+      return {
+        result: parsed,
+        modelUsed: `Google ${geminiModel}`,
+        isMock: false,
+      };
+    } catch (err: any) {
+      console.warn(`[AI Service] Gemini request failed (${err.message}). Falling back to next available engine.`);
+    }
+  }
+
+  // 2. Check OpenAI API Key
+  const openAiKey = process.env.OPENAI_API_KEY?.trim();
+  const openAiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+  if (openAiKey && openAiKey !== 'mock' && openAiKey.startsWith('sk-')) {
+    try {
+      const openai = new OpenAI({ apiKey: openAiKey });
 
       const response = await openai.chat.completions.create({
-        model: preferredModel,
+        model: openAiModel,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: SYSTEM_ANALYSIS_PROMPT },
           { role: 'user', content: userMessage },
         ],
         response_format: { type: 'json_object' },
@@ -148,7 +190,6 @@ You MUST respond strictly with valid JSON conforming to this schema:
       }
 
       const parsed: AnalysisResult = JSON.parse(content);
-      // Ensure sourceReferences has valid documentIds
       parsed.sourceReferences = documents.map((doc) => ({
         documentId: doc.id,
         documentName: doc.originalName,
@@ -159,23 +200,18 @@ You MUST respond strictly with valid JSON conforming to this schema:
 
       return {
         result: parsed,
-        modelUsed: `OpenAI ${response.model || preferredModel}`,
+        modelUsed: `OpenAI ${response.model || openAiModel}`,
         isMock: false,
       };
     } catch (err: any) {
       console.warn(`[AI Service] OpenAI request failed (${err.message}). Falling back to Intelligent Mock Engine.`);
-      return {
-        result: generateDynamicMockAnalysis(documents, prompt),
-        modelUsed: 'Intelligence Engine (Dynamic Fallback Mode)',
-        isMock: true,
-      };
     }
   }
 
-  // No API key provided: use intelligent dynamic analyzer
+  // 3. Fallback to Dynamic Mock Engine
   return {
     result: generateDynamicMockAnalysis(documents, prompt),
-    modelUsed: 'Intelligence Engine (Dynamic Mock Mode)',
+    modelUsed: 'Intelligence Engine (Dynamic Fallback Mode)',
     isMock: true,
   };
 }
@@ -252,14 +288,11 @@ export function generateDynamicMockAnalysis(documents: DocumentRecord[], userPro
   // 3. Comparisons Table
   const comparisons: MetricComparison[] = [];
   
-  // Metric: Document Type & Size
-  const sizeMap: Record<string, string> = {};
   const lengthMap: Record<string, string> = {};
   const dataPointsMap: Record<string, string> = {};
   const primaryTopicMap: Record<string, string> = {};
 
   documents.forEach((doc, idx) => {
-    sizeMap[doc.originalName] = `${(doc.fileSize / 1024).toFixed(1)} KB (${doc.mimeType || 'raw'})`;
     lengthMap[doc.originalName] = `${doc.charCount} chars (~${doc.tokenEstimate} tokens)`;
     
     const parsed = parsedDocs[idx];

@@ -22,11 +22,18 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Health Check
 app.get('/api/health', (_req: Request, res: Response) => {
+  let aiMode = 'Dynamic Mock Fallback Active';
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'mock') {
+    aiMode = `Gemini Live (${process.env.GEMINI_MODEL || 'gemini-3.5-flash'})`;
+  } else if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'mock') {
+    aiMode = `OpenAI Live (${process.env.OPENAI_MODEL || 'gpt-4o-mini'})`;
+  }
+
   res.json({
     status: 'ok',
     service: 'Multi-Document Intelligence Workbench Backend',
     timestamp: new Date().toISOString(),
-    aiMode: process.env.OPENAI_API_KEY ? 'OpenAI Configured' : 'Dynamic Mock Fallback Active',
+    aiMode,
   });
 });
 
